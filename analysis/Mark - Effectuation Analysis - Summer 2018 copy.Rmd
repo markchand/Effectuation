@@ -1,0 +1,289 @@
+---
+title: "Political Effectuation - Sequence and Stability"
+author: "Peter Boumgarden and Mark Hand"
+date: "5/24/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, message=FALSE, warning=FALSE)
+```
+
+## Introduction
+
+The following document walks through an analysis of political effectuation in the form of ideological exploration for candidates for senate and house in the US political races, in particular exploring whether they funding maintained stability or had any sort of sequence in ideological homogeneity.
+
+```{r packages comment=NA, warning=FALSE, message=FALSE} 
+# Installing Necessary Packages
+# source("http://washuresearch.org/stockfunctions.R") 
+library(tidyverse) 
+library(ff)
+library(data.table)
+library(lme4)
+```
+
+## Data Cleaning 
+```{r comment=NA, warning=FALSE, message=FALSE} 
+# Sources 
+# https://data.stanford.edu/dime#download-data
+# https://elections.huffingtonpost.com/pollster/2014-national-house-race
+
+# What's this? 
+# fread("Political_Data/dime_cong_elections_current.csv", select = c(1:3))
+
+#Political ideology 
+PoliticalIdeology <- read_csv("Political_Data/dime_cong_elections_current.csv")
+PoliticalIdeology %>% transform(total_receipts = as.numeric(total_receipts)) -> PoliticalIdeology
+
+# Examining small number of rows in a large file: 
+bigfile.sample <- read.csv("Political_Data/contribDB_2014.csv", stringsAsFactors=FALSE, header=T, nrows=20)
+
+# Loading 2014 contributions 
+contribDB_2014 <- fread("Political_Data/contribDB_2014.csv", select =  c("bonica.rid","transaction.id", "amount","date","contributor.name","contributor.zipcode","recipient.name","seat","contributor.cfscore", "candidate.cfscore", "contributor.state", "recipient.state"))
+head(contribDB_2014)
+
+# Setting months and years in contributions 
+contribDB_2014 %>% 
+  mutate(date = as.Date(date),
+    month = month(date),
+    year = year(date)) -> contribDB_2014
+
+# Sample Candidate Filters
+Candidate.Funding_Alquist <- filter(contribDB_2014, recipient.name == "alquist, elaine")
+Candidate.Funding_Beto <- filter(contribDB_2014, recipient.name == "O ROURKE, ROBERT (BETO)")
+
+# Sample State Filters 
+unique(contribDB_2014$recipient.state)
+contribDB_2014_TX <- filter(contribDB_2014, recipient.state == "TX") 
+
+```
+
+## Charts 
+```{r some fun charts, include=F}
+# http://r4ds.had.co.nz/data-visualisation.html
+
+# All data, by party
+ggplot(data = PoliticalIdeology) + 
+  geom_point(mapping = aes(x = recipient_cfscore , y = total_receipts, color=party))
+
+# All data, by win/loss
+ggplot(data = PoliticalIdeology) + 
+  geom_point(mapping = aes(x = recipient_cfscore , y = total_receipts, color=gwinner))
+
+# Republican winners and losers 
+ggplot(data = subset(PoliticalIdeology, party=="R")) + 
+  geom_point(mapping = aes(x = recipient_cfscore , y = total_receipts, color=gwinner))
+
+# Subset
+ggplot(data = subset(PoliticalIdeology, total_receipts > 400000)) + 
+  geom_point(mapping = aes(x = recipient_cfscore , y = total_receipts, color=gwinner))
+
+# Texas 2018 
+ggplot(data = subset(PoliticalIdeology, state=="TX" & cycle=="2018")) + 
+  geom_point(mapping = aes(x = recipient_cfscore , y = total_receipts, color=party))
+
+# Histo 
+ggplot(data = PoliticalIdeology) +
+  geom_histogram(mapping = aes(x = recipient_cfscore))
+
+# Beto2014 
+ggplot(data = subset(contribDB_2014, recipient.name == "O ROURKE, ROBERT (BETO)")) + 
+  geom_point(mapping = aes(x = date, y = contributor.cfscore, size = amount)) + theme_minimal() + labs(list(title='', x='', y='')) + theme(axis.ticks = element_blank(), axis.text.x = element_blank()) 
+
+# Beto2014 trend line
+ggplot(data = subset(contribDB_2014, recipient.name == "O ROURKE, ROBERT (BETO)")) + geom_point(mapping = aes(x = date, y = contributor.cfscore)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal() 
+
+# Beto2014 abline
+ggplot(data = subset(contribDB_2014, recipient.name == "O ROURKE, ROBERT (BETO)")) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal()
+
+# grep('SCALISE', contribDB_2014$recipient.name) 
+contribDB_2014$recipient.name[660490]
+
+"SCALISE, STEPHEN J"
+ggplot(data = subset(contribDB_2014, recipient.name == "SCALISE, STEPHEN J")) + 
+  geom_point(mapping = aes(x = date, y = contributor.cfscore, size = amount)) + theme_minimal() + labs(list(title='', x='', y='')) + theme(axis.ticks = element_blank(), axis.text.x = element_blank()) 
+
+ggplot(data = subset(contribDB_2014, recipient.name == "SCALISE, STEPHEN J")) + geom_point(mapping = aes(x = date, y = contributor.cfscore)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal() 
+
+ggplot(data = subset(contribDB_2014, recipient.name == "PELOSI, NANCY")) + geom_point(mapping = aes(x = date, y = contributor.cfscore)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal() 
+```
+
+PoliticalIdeology2014
+### Generic Ballot History 
+```{r generic ballot}
+generic_ballot_history <- read_csv("Political_Data/generic-ballot-history.csv")
+View(generic_ballot_history)
+
+ggplot(data = generic_ballot_history) + 
+  geom_smooth(mapping = aes(x = end_date, y = Democrat), color="blue") + theme_minimal() + labs(list(title='', x='', y='')) + theme(axis.ticks = element_blank(), axis.text.x = element_blank())
+
+ggplot(data = generic_ballot_history) + theme_minimal() + 
+  geom_point(mapping = aes(x = end_date, y = Democrat), color="blue") +   
+  geom_smooth(mapping = aes(x = end_date, y = Democrat), color="blue") +   
+  geom_point(mapping = aes(x = end_date, y = Republican), color="red") +     
+  geom_smooth(mapping = aes(x = end_date, y = Republican), color="red") + 
+  geom_point(mapping = aes(x = end_date, y = `Undecided/Other`), color="yellow") + 
+  geom_smooth(mapping = aes(x = end_date, y = `Undecided/Other`), color="yellow") + 
+  labs(list(title='Generic Polling, 2012-2018', x='', y='% Support'))
+
+ggplot(data = generic_ballot_history) + theme_minimal() + 
+  geom_smooth(mapping = aes(x = end_date, y = Democrat), color="blue") +   
+  geom_smooth(mapping = aes(x = end_date, y = Republican), color="red") + 
+  geom_smooth(mapping = aes(x = end_date, y = `Undecided/Other`), color="yellow") + 
+  labs(list(title='Generic Polling, 2012-2018', x='', y='% Support'))
+```
+
+### Starting Hypothesis 1: Consistency -> Victory 
+Columns to build: 
+* Campaign ID (observation)
+* Won primary? 0/1 (DV) 
+* Won general? 0/1 (DV) <-- might want to separate out, or determine hierarchy 
+* Slope of of ideological trend line (how to build?) 
+* Amount raised (control)
+* Party (control) 
+* Tighteness of race (how?)
+* Party (control)
+* State (fixed effects?)
+* Challenger v incumbent
+* House v Senate 
+* Other controls, per Bonica? 
+
+```{r basic modeling}
+# Base model for 2014 cycle 
+head(PoliticalIdeology) 
+PoliticalIdeology %>% filter(cycle==2014) -> PoliticalIdeology2014 
+table(PoliticalIdeology2014$pwinner) 
+# Replacing Ls and Ws with 1s and 0s, making things into the right data types   
+PoliticalIdeology2014 %>% 
+  mutate(pwinner = stringr::str_replace(pwinner, "L", "0"),
+         pwinner = stringr::str_replace(pwinner, "W", "1"),
+         pwinner = as.factor(pwinner),
+         gwinner = as.factor(gwinner),
+         ppct = as.numeric(ppct),
+         gpct = as.numeric(gpct)) -> PoliticalIdeology2014
+
+# Starting out with disbursements 
+summary(glm(pwinner~total_disbursements, data = PoliticalIdeology2014, family = binomial))
+summary(glm(gwinner~total_disbursements, data = PoliticalIdeology2014, family = binomial))
+
+# Plots of money raised versus winning primary
+ggplot(data=subset(PoliticalIdeology2014, ppct>0.0)) + theme_minimal() + geom_point(mapping = aes(x = total_disbursements, y = ppct, color = pwinner))
+
+# Plots of money raised versus winning general 
+ggplot(data=subset(PoliticalIdeology2014, gpct>0.3 & gpct <0.7)) + theme_minimal() + geom_point(mapping = aes(x = total_disbursements, y = gpct, color = gwinner)) + scale_y_continuous()
+
+summary(glm(pwinner~total_disbursements+Incum_Chall+party+recipient_cfscore*party, data = PoliticalIdeology2014, family = binomial))
+# More money is good. 
+# Being an incumbent is good. 
+# Being a Republican in this cycle was bad. 
+# For Democrats, being more conservative (having a higher recipient_cfscore) was bad. 
+# Gender needs to be (re)constructed. 
+# State fixed effects? 
+
+# Filtering for house only 
+PoliticalIdeology2014 %>% filter(seat=="federal:house") -> PoliticalIdeology2014H
+summary(glm(pwinner~total_disbursements+Incum_Chall+party+recipient_cfscore*party, data = PoliticalIdeology2014H, family = binomial))
+# Basically the same results 
+```
+
+### Trying to get slope of lines
+```{r slopes ignore the comments}
+
+# Candidates that show greater ideological consistency are more likely to win. 
+# DV: Winning
+# IV: Slope of ideological line over time 
+# Controls in data we have: 
+# R v D candidate, generic R v D ballot, state, year, amount raised 
+# Controls we need to find: 
+# Challenger v. incumbent (though we could look at previous years, closeness of race 
+
+# Works! Now, how to run this over every candidate and then save to a dataframe? This is either a "for "for loop" or create-your-own-function situation. 
+# Maybe helpful: https://github.com/tidyverse/dplyr/issues/2177
+
+# For loop fail 
+# output <- vector("double", ncol(df)) 
+# for (i in seq_along(unique(contribDB_2014_TX$bonica.rid))) 
+#  {output[[i]] <- coef(lm(date ~ contributor.cfscore, data = contribDB_2014_TX, subset=(bonica.rid == [[i]])))
+#  }
+
+# Function fails  
+# x <- unique(contribDB_2014_TX$bonica.rid)
+# coef(lm(date ~ contributor.cfscore, data = contribDB_2014_TX, subset=(bonica.rid == x)))
+
+# Function almost works? 
+# coef01 <- function (x) { 
+#   number_entries <- nrow(contribDB_2014_TX[contribDB_2014_TX$recipient.name ==x, ])
+#   print(x)
+#   print(number_entries)
+#   if (length(!is.na(contribDB_2014_TX$date[contribDB_2014_TX$recipient.name ==x])) > 3 & length(!is.na(contribDB_2014_TX$contributor.cfscore[contribDB_2014_TX$recipient.name ==x])) > 3) {
+#     coef(lm(date ~ contributor.cfscore, data = contribDB_2014_TX, subset=(recipient.name == x)))
+#   }
+# }
+
+# coef01 <- function (x) { 
+#   print(x)
+#   if (abs(sum(contribDB_2014_TX$contributor.cfscore[contribDB_2014_TX$recipient.name ==x])) > 0) {
+#     coef(lm(date ~ contributor.cfscore, data = contribDB_2014_TX, subset=(recipient.name == x)))
+#   }
+# }
+
+# coef01(x = "FLUOR CORPORATION POLITICAL ACTION COMMITTEE (FLUOR PAC)")
+# coef01(x = "O ROURKE, ROBERT (BETO)")
+# coef01(x = "TEAMSTERS LOCAL 745 DRIVE")
+
+# contribDB_2014_TX[contribDB_2014_TX$recipient.name =="TEAMSTERS LOCAL 745 DRIVE",]
+# length(contribDB_2014_TX$contributor.cfscore[contribDB_2014_TX$recipient.name =="O ROURKE, ROBERT (BETO)"])
+
+# length(!is.na(contribDB_2014_TX$date[contribDB_2014_TX$recipient.name =="TEAMSTERS LOCAL 745 DRIVE"]))
+# length(!is.na(contribDB_2014_TX$contributor.cfscore[contribDB_2014_TX$recipient.name =="TEAMSTERS LOCAL 745 DRIVE"]))
+
+# Basic function, for Beto 
+contribDB_2014_TX %>% 
+  filter(recipient.name == "O ROURKE, ROBERT (BETO)")
+coef(lm(date ~ contributor.cfscore, data = contribDB_2014_TX, subset=(bonica.rid == "cand44995")))
+# So this is different from the recipient.name function. Why? 
+
+# Function - success! 
+coef02 <- function (x) { 
+  coef(lm(date ~ contributor.cfscore, data = contribDB_2014_TX02, subset=(bonica.rid == x)))}
+
+# Filtering out NAs becuase they break the function 
+contribDB_2014_TX %>% 
+  filter(!is.na(contributor.cfscore)) -> contribDB_2014_TX02
+
+# Building list of uniques to run the function on 
+TX_uniques02 <- unique(contribDB_2014_TX02$bonica.rid)
+
+# Testing the series 
+newdataframe <- data.frame(bonica.rid = TX_uniques02[1:5])
+head(newdataframe)
+newdataframe$intercept <- sapply(TX_uniques02[1:5], function (i) coef02(i)[1])
+newdataframe$slope <- sapply(TX_uniques02[1:5], function (i) coef02(i)[2])
+head(newdataframe)
+
+# Running the above on the larger frame 
+newdataframe <- data.frame(bonica.rid = TX_uniques02)
+head(newdataframe)
+newdataframe$intercept <- sapply(TX_uniques02, function (i) coef02(i)[1])
+newdataframe$slope <- sapply(TX_uniques02, function (i) coef02(i)[2])
+head(newdataframe)
+
+politislope <- left_join(newdataframe, PoliticalIdeology2014, by = c("bonica.rid" = "bonica_rid"))
+politislope %>% 
+  filter(!is.na(cycle)) -> candislope
+# How did we end up with only 99 candidates? Something went wrong. 
+
+summary(glm(pwinner~slope*party, data = candislope, family = binomial))
+summary(glm(gwinner~slope*party, data = candislope, family = binomial))
+summary(glm(pwinner~slope+party, data = candislope, family = binomial))
+summary(glm(gwinner~slope+party, data = candislope, family = binomial))
+# No results 
+
+```
+
+```{r lme4}
+joined.2014 <- left_join(contribDB_2014, PoliticalIdeology2014, by = c("bonica.rid" = "bonica_rid"))
+
+fm1 <- lmer(pwinner ~ date + (date | contributor.cfscore), joined.2014)
+```
+

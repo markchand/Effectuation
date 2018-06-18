@@ -1,0 +1,193 @@
+---
+title: "Political Effectuation - Sequence and Stability"
+author: "Peter Boumgarden and Mark Hand"
+date: "5/24/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, message=FALSE, warning=FALSE)
+```
+
+## Introduction
+
+The following document walks through an analysis of political campaign strategy in the form of ideological exploration for candidates for Senate and House political races in the US; in particular, we explore whether the ideology of their funding maintained stability or had any sort of sequence in ideological 'spread.'
+
+```{r comment=NA, warning=FALSE, message=FALSE} 
+# Installing Necessary Packages
+source("http://washuresearch.org/stockfunctions.R") 
+library(tidyverse) 
+library(data.table)
+library(gtable)
+```
+
+## Data Cleaning 
+```{r comment=NA, warning=FALSE, message=FALSE} 
+# Sources 
+# https://data.stanford.edu/dime#download-data
+# https://elections.huffingtonpost.com/pollster/2014-national-house-race
+
+# What's this? An approach to big data
+# fread("Political_Data/dime_cong_elections_current.csv", select = c(1:3))
+
+#Political ideology 
+# PoliticalIdeology <- read_csv("Political_Data/dime_cong_elections_current.csv")
+PoliticalIdeology %>% transform(total_receipts = as.numeric(total_receipts)) -> PoliticalIdeology
+
+# Examining small number of rows in a large file: 
+# bigfile.sample <- read.csv("Political_Data/contribDB_2014.csv", stringsAsFactors=FALSE, header=T, nrows=20)
+
+# Loading 2014 contributions 
+# contribDB_2014 <- fread("Political_Data/contribDB_2014.csv", select =  c("transaction.id", "amount","date","contributor.name","contributor.zipcode","recipient.name","seat","contributor.cfscore", "candidate.cfscore", "contributor.state", "recipient.state"))
+# head(contribDB_2014)
+
+# Loading Candidate - Ideology File
+DIMEscores <- read_csv("Political_Data/dime_recipients_all_1979_2014.csv")
+
+# Setting months and years in contributions 
+contribDB_2014 %>% 
+  mutate(date = as.Date(date),
+    month = month(date),
+    year = year(date)) -> contribDB_2014
+
+# Create a new variable which identifies whether funding comes from within the state
+
+contribDB_2014 %>% 
+ mutate(SSfunding = ifelse("contributor.state == recipient.state"),1,0) -> contribDB_2014
+
+
+# Sample Candidate Filters
+Candidate.Funding_Alquist <- filter(contribDB_2014, recipient.name == "alquist, elaine")
+Candidate.Funding_Beto <- filter(contribDB_2014, recipient.name == "O ROURKE, ROBERT (BETO)")
+
+# Sample State Filters 
+unique(contribDB_2014$recipient.state)
+contribDB_2014_TX <- filter(contribDB_2014, recipient.state == "TX") 
+
+```
+
+## Charts 
+```{r some fun charts, include=F}
+# http://r4ds.had.co.nz/data-visualisation.html
+
+# All data, by party
+ggplot(data = PoliticalIdeology) + 
+  geom_point(mapping = aes(x = recipient_cfscore , y = total_receipts, color=party))
+
+# All data, by win/loss
+ggplot(data = PoliticalIdeology) + 
+  geom_point(mapping = aes(x = recipient_cfscore , y = total_receipts, color=gwinner))
+
+# Republican winners and losers 
+ggplot(data = subset(PoliticalIdeology, party=="R")) + 
+  geom_point(mapping = aes(x = recipient_cfscore , y = total_receipts, color=gwinner))
+
+# Subset
+ggplot(data = subset(PoliticalIdeology, total_receipts > 400000)) + 
+  geom_point(mapping = aes(x = recipient_cfscore , y = total_receipts, color=gwinner))
+
+# Texas 2018 
+ggplot(data = subset(PoliticalIdeology, state=="TX" & cycle=="2018")) + 
+  geom_point(mapping = aes(x = recipient_cfscore , y = total_receipts, color=party))
+
+# Histo 
+ggplot(data = PoliticalIdeology) +
+  geom_histogram(mapping = aes(x = recipient_cfscore))
+
+# Beto2014 
+ggplot(data = subset(contribDB_2014, recipient.name == "O ROURKE, ROBERT (BETO)")) + 
+  geom_point(mapping = aes(x = date, y = contributor.cfscore, size = amount)) + theme_minimal() + labs(list(title='', x='', y='')) + theme(axis.ticks = element_blank(), axis.text.x = element_blank()) 
+
+# Beto2014 trend line
+ggplot(data = subset(contribDB_2014, recipient.name == "O ROURKE, ROBERT (BETO)")) + geom_point(mapping = aes(x = date, y = contributor.cfscore)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal() 
+
+# Mitch McC 2014 trend line < -- **TEST FOR THE COMPARISON PLOTS**
+
+ggplot(data = subset(contribDB_2014, recipient.name == "BRAT, DAVID ALAN")) + ggtitle("David Brat 2014/Campaign Funding Strategy") + geom_point(mapping = aes(x = date, y = contributor.cfscore)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal() 
+
+
+# grep('SCALISE', contribDB_2014$recipient.name) 
+contribDB_2014$recipient.name[660490]
+
+"SCALISE, STEPHEN J"
+ggplot(data = subset(contribDB_2014, recipient.name == "SCALISE, STEPHEN J")) + 
+  geom_point(mapping = aes(x = date, y = contributor.cfscore, size = amount)) + theme_minimal() + labs(list(title='', x='', y='')) + theme(axis.ticks = element_blank(), axis.text.x = element_blank()) 
+
+ggplot(data = subset(contribDB_2014, recipient.name == "SCALISE, STEPHEN J")) + geom_point(mapping = aes(x = date, y = contributor.cfscore)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal() 
+
+ggplot(data = subset(contribDB_2014, recipient.name == "PELOSI, NANCY")) + geom_point(mapping = aes(x = date, y = contributor.cfscore)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal() 
+
+# Facet Mapping of All Candidates
+
+# FacetTest <- ggplot(contribDB_2014) + geom_point(mapping = aes(x = date, y = contributor.cfscore)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal() 
+
+# Facet Mapping by State
+# FacetTest + facet_wrap( ~ recipient.name, nrow=300) + labs(title="Candidate Funding Strategy", caption = "Source: mpg", subtitle="Exploring Differences by Candidates")
+
+# Facet Maping by State
+
+# FacetTest + facet_grid( ~ recipient.state) + labs(title="Candidate Funding Strategy", subtitle="Exploring Funding Strategy Differences by State")
+
+# Comparing Candidates - Cantor v Brant Substitute in Candiate Name as recipient.name to do the comparison 
+
+Can1 <- ggplot(data = subset(contribDB_2014, recipient.name == "CANTOR, ERIC IVAN")) + ggtitle("Eric Cantor (R)\n2014 Campaign Funding Spread") + geom_point(mapping = aes(x = date, y = contributor.cfscore, size = amount)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal()  
+Can2 <- ggplot(data = subset(contribDB_2014, recipient.name == "BRAT, DAVID ALAN")) + ggtitle("David Brat (D)\n2014 Campaign Funding Spread") + geom_point(mapping = aes(x = date, y = contributor.cfscore, size = amount)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal() 
+
+gCan1 <- ggplotGrob(Can1)
+gCan2 <- ggplotGrob(Can2)
+g <- rbind(gCan1, gCan2, size = "first")
+g$widths <- unit.pmax(gCan1$widths, gCan2$widths)
+grid.newpage()
+grid.draw(g)
+
+# Comparing Candidates - Barber v Scully 2014 
+
+Can1 <- ggplot(data = subset(contribDB_2014, recipient.name == "BARBER, RONALD")) + ggtitle("Ronald Barber (D)\n2014 Campaign Funding Spread") + geom_point(mapping = aes(x = date, y = contributor.cfscore, size = amount)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal()  
+Can2 <- ggplot(data = subset(contribDB_2014, recipient.name == "MCSALLY, MARTHA")) + ggtitle("Martha McSally (R)\n2014 Campaign Funding Spread") + geom_point(mapping = aes(x = date, y = contributor.cfscore, size = amount)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal() 
+
+gCan1 <- ggplotGrob(Can1)
+gCan2 <- ggplotGrob(Can2)
+g <- rbind(gCan1, gCan2, size = "first")
+g$widths <- unit.pmax(gCan1$widths, gCan2$widths)
+grid.newpage()
+grid.draw(g)
+
+# Comparing Candidates - Barber v Scully 2014 
+
+Can1 <- ggplot(data = subset(contribDB_2014, recipient.name == "BARBER, RONALD")) + ggtitle("Ronald Barber\n2014 Campaign Funding Spread") + geom_point(mapping = aes(x = date, y = contributor.cfscore, size = amount)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal()  
+Can2 <- ggplot(data = subset(contribDB_2014, recipient.name == "MCSALLY, MARTHA E MS.")) + ggtitle("Martha McSally\n2014 Campaign Funding Spread") + geom_point(mapping = aes(x = date, y = contributor.cfscore, size = amount)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal() 
+
+gCan1 <- ggplotGrob(Can1)
+gCan2 <- ggplotGrob(Can2)
+g <- rbind(gCan1, gCan2, size = "first")
+g$widths <- unit.pmax(gCan1$widths, gCan2$widths)
+grid.newpage()
+grid.draw(g)
+
+```
+
+### Generic Ballot History 
+```{r generic ballot}
+generic_ballot_history <- read_csv("Political_Data/generic-ballot-history.csv")
+View(generic_ballot_history)
+
+ggplot(data = generic_ballot_history) + 
+  geom_smooth(mapping = aes(x = end_date, y = Democrat), color="blue") + theme_minimal() + labs(list(title='', x='', y='')) + theme(axis.ticks = element_blank(), axis.text.x = element_blank())
+
+ggplot(data = generic_ballot_history) + theme_minimal() + 
+  geom_point(mapping = aes(x = end_date, y = Democrat), color="blue") +   
+  geom_smooth(mapping = aes(x = end_date, y = Democrat), color="blue") +   
+  geom_point(mapping = aes(x = end_date, y = Republican), color="red") +     
+  geom_smooth(mapping = aes(x = end_date, y = Republican), color="red") + 
+  geom_point(mapping = aes(x = end_date, y = `Undecided/Other`), color="yellow") + 
+  geom_smooth(mapping = aes(x = end_date, y = `Undecided/Other`), color="yellow") + 
+  labs(list(title='Generic Polling, 2012-2018', x='', y='% Support'))
+
+ggplot(data = generic_ballot_history) + theme_minimal() + 
+  geom_smooth(mapping = aes(x = end_date, y = Democrat), color="blue") +   
+  geom_smooth(mapping = aes(x = end_date, y = Republican), color="red") + 
+  geom_smooth(mapping = aes(x = end_date, y = `Undecided/Other`), color="yellow") + 
+  labs(list(title='Generic Polling, 2012-2018', x='', y='% Support'))
+```
+
+
