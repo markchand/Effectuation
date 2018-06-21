@@ -3,6 +3,7 @@ title: "Political Effectuation - Sequence and Stability"
 author: "Peter Boumgarden and Mark Hand"
 date: "5/24/2018"
 output: html_document
+bibliography: references.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -288,3 +289,5 @@ joined.2014 <- left_join(contribDB_2014, PoliticalIdeology2014, by = c("bonica.r
 fm1 <- lmer(pwinner ~ date + (date | contributor.cfscore), joined.2014)
 ```
 
+### Bibliography test 
+[@marsh_catabolic_1981]
