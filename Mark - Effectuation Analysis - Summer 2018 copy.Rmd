@@ -57,7 +57,7 @@ contribDB_2014 %>%
 # Sample State Filters 
 unique(contribDB_2014$recipient.state)
 table(contribDB_2014$contributor.state)
-contribDB_2014_TX <- filter(contribDB_2014, recipient.state == "TX" | ) 
+contribDB_2014_TX <- filter(contribDB_2014, recipient.state == "TX" | contributor.state == "TX") 
 
 ```
 
@@ -113,7 +113,7 @@ ggplot(data = subset(contribDB_2014, recipient.name == "PELOSI, NANCY")) + geom_
 
 ### Generic Ballot History 
 ```{r generic ballot}
-generic_ballot_history <- read_csv("Political_Data/generic-ballot-history.csv")
+generic_ballot_history <- read_csv("data/generic-ballot-history.csv")
 View(generic_ballot_history)
 
 ggplot(data = generic_ballot_history) + 
@@ -150,6 +150,7 @@ Columns to build:
 * House v Senate 
 * Other controls, per Bonica? 
 
+## Basic modeling 
 ```{r basic modeling}
 # Base model for 2014 cycle 
 table(PoliticalIdeology2014$pwinner) 
@@ -271,7 +272,7 @@ head(newdataframe)
 politislope <- left_join(newdataframe, PoliticalIdeology2014, by = c("bonica.rid" = "bonica_rid"))
 politislope %>% 
   filter(!is.na(cycle)) -> candislope
-# How did we end up with only 99 candidates? Something went wrong. 
+# How did we end up with only 99 candidates? Something went wrong, probably with the NAs. 
 
 summary(glm(pwinner~slope*party, data = candislope, family = binomial))
 summary(glm(gwinner~slope*party, data = candislope, family = binomial))
@@ -282,7 +283,7 @@ summary(glm(gwinner~slope+party, data = candislope, family = binomial))
 ```
 
 # Trying out LMER
-... though this is too large a file for me to work from. 
+...  this is too large a file for me to work from. 
 ```{r lme4}
 joined.2014 <- left_join(contribDB_2014, PoliticalIdeology2014, by = c("bonica.rid" = "bonica_rid"))
 
