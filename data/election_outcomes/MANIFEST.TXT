@@ -1,0 +1,2 @@
+codebook-us-senate-1976–2016.md (text/markdown) 2858 bytes.
+1976-2016-senate.csv (text/csv) 431610 bytes.

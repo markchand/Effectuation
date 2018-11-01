@@ -1,0 +1,61 @@
+save.image()
+source("http://washuresearch.org/stockfunctions.R")#
+library(car) # For testing linear hypotheses#
+library(lme4)#
+library(igraph) # For network analyses#
+library(ggplot2) # For pretty pictures#
+library(reshape2) # For working with uneven length datasets#
+library(gridExtra) # For laying out ggplot graphics
+getwd()
+source("http://washuresearch.org/stockfunctions.R")
+warnings()
+source("http://washuresearch.org/stockfunctions.R")
+install.packages(“dplyr”)
+install.packages(dplyr)
+install.packages(reshape2)
+setwd("~/Dropbox/2-Scholarship/1-Academic/2- Projects/Effectuation/Political_Data")
+getwd()
+PoliticalIdeology <- readcsv('dime_cong_elections_current.csv')
+PoliticalIdeology <- read_csv('dime_cong_elections_current.csv')
+?read_csv
+??read_csv
+political_ideology <- read.delim("dime_cong_elections_current.csv", sep=",", header=T, stringsAsFactors=F)
+header(political_ideology)
+library(psych)
+install.packages(psych)
+install.packages("psych")
+rm(list=ls(all=TRUE))
+source("http://washuresearch.org/stockfunctions.R")
+install.packages(“lme4”)#
+install.packages(“lpsych”)#
+install.packages(“lquantreg”)#
+install.packages(“lxtable”)#
+install.packages(“lreshape”)#
+install.packages(“larm”)#
+install.packages(“lMCMCpack”)#
+install.packages(“lmultilevel”)#
+install.packages(“lsqldf”)#
+install.packages(“lmetafor”)#
+install.packages(“llavaan”)#
+install.packages(“lsna”)#
+#
+source("http://washuresearch.org/stockfunctions.R")
+install.packages(lme4)
+install.packages("lme4")
+install.packages(“lpsych”)
+install.packages("psych”)
+install.packages("psych”)
+install.packages(“lquantreg”)
+install.packages(“lme4”)#
+install.packages(“psych”)#
+install.packages(“quantreg”)#
+install.packages(“xtable”)#
+install.packages(“reshape”)#
+install.packages(“arm”)#
+install.packages(“MCMCpack”)#
+install.packages(“multilevel”)#
+install.packages(“sqldf”)#
+install.packages(“metafor”)#
+install.packages(“lavaan”)#
+install.packages(“sna”)
+?install.packages
