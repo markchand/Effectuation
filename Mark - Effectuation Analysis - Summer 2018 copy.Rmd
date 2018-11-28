@@ -190,7 +190,7 @@ summary(glm(pwinner~total_disbursements+Incum_Chall+party+recipient_cfscore*part
 ### Trying to get slope of lines
 ```{r slopes ignore the comments}
 
-# Candidates that show greater ideological consistency are more likely to win. 
+# H: Candidates that show greater ideological consistency are more likely to win. 
 # DV: Winning
 # IV: Slope of ideological line over time 
 # Controls in data we have: 

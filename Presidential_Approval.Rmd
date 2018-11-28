@@ -1,0 +1,46 @@
+---
+title: "Presidential Approval"
+author: "Mark Hand"
+date: "11/28/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, message=FALSE, warning=FALSE)
+```
+
+## What This Is
+This is some initial data exploration on some presidential approval data. 
+
+# Data 
+The data we're using comes from Gallup. That's behind a paywall, so we yanked it from [The American Presidency Project](https://www.presidency.ucsb.edu/statistics/data/presidential-job-approval), which shares the data as a rather unworkable Excel sheet, which we then tidied. 
+
+```{r importing approval, echo=F}
+library(readxl)
+library(tidyverse)
+approval <- read_excel("data/presidential_approval/American Presidency Project - Approval Ratings for POTUS.xlsx", 
+    col_types = c("text", "date", "date", 
+        "numeric", "numeric", "numeric"))
+```
+
+## Data examination 
+```{r summary statistics}
+summary(approval)
+ggplot(approval, aes(Approving)) + geom_histogram() + theme_minimal()
+ggplot(approval, aes(Disapproving)) + geom_histogram() + theme_minimal()
+```
+
+
+## Plots! 
+
+```{r pressure, echo=FALSE}
+ggplot(data = approval, aes(x = `Start Date`, y = Approving, group = President, color = President)) +
+  geom_line() +
+  theme_minimal()
+
+ggplot(approval, aes(x = `Start Date`, y = Approving, group = President, colour = President)) +
+    geom_line() +
+    facet_wrap(~President) + 
+    theme_minimal()
+# Need to figure out x-axis nonsense 
+```
