@@ -21,13 +21,21 @@ library(tidyverse)
 approval <- read_excel("data/presidential_approval/American Presidency Project - Approval Ratings for POTUS.xlsx", 
     col_types = c("text", "date", "date", 
         "numeric", "numeric", "numeric"))
+approval %>% 
+  mutate(Approving_change = Approving - lead(Approving), Disapproving_change = Disapproving - lead(Disapproving)) -> approval
 ```
 
 ## Data examination 
 ```{r summary statistics}
 summary(approval)
+
 ggplot(approval, aes(Approving)) + geom_histogram() + theme_minimal()
+
 ggplot(approval, aes(Disapproving)) + geom_histogram() + theme_minimal()
+
+ggplot(approval, aes(Approving_change)) + geom_histogram() + theme_minimal()
+
+ggplot(approval, aes(Disapproving_change)) + geom_histogram() + theme_minimal()
 ```
 
 
