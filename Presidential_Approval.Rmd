@@ -18,30 +18,41 @@ The data we're using comes from Gallup. That's behind a paywall, so we yanked it
 ```{r importing approval, echo=F}
 library(readxl)
 library(tidyverse)
+library(lubridate)
 approval <- read_excel("data/presidential_approval/American Presidency Project - Approval Ratings for POTUS.xlsx", 
     col_types = c("text", "date", "date", 
         "numeric", "numeric", "numeric"))
 approval %>% 
-  mutate(Approving_change = Approving - lead(Approving), Disapproving_change = Disapproving - lead(Disapproving)) -> approval
+  mutate(Approving_change = Approving - lead(Approving), Disapproving_change = Disapproving - lead(Disapproving),
+         `Unsure/NoData_change` = `Unsure/NoData` - lead(`Unsure/NoData`)) -> approval
 ```
 
 ## Data examination 
-```{r summary statistics}
-summary(approval)
 
+### Summary statistics
+Want summary statistics by President, and to figure out how to ignore the changes from one president to another (or do we?). 
+```{r summary statistics, echo=FALSE}
+summary(approval)
+```
+
+### Histograms of approval and disapproval
+```{r histograms, echo=FALSE}
 ggplot(approval, aes(Approving)) + geom_histogram() + theme_minimal()
 
 ggplot(approval, aes(Disapproving)) + geom_histogram() + theme_minimal()
 
+ggplot(approval, aes(`Unsure/NoData`)) + geom_histogram() + theme_minimal()
+
 ggplot(approval, aes(Approving_change)) + geom_histogram() + theme_minimal()
 
 ggplot(approval, aes(Disapproving_change)) + geom_histogram() + theme_minimal()
+
+ggplot(approval, aes(`Unsure/NoData_change`)) + geom_histogram() + theme_minimal()
 ```
 
-
 ## Plots! 
-
-```{r pressure, echo=FALSE}
+Need to figure out how to fix x-axis in facet wrap. 
+```{r approval over time, echo=FALSE}
 ggplot(data = approval, aes(x = `Start Date`, y = Approving, group = President, color = President)) +
   geom_line() +
   theme_minimal()
@@ -50,5 +61,34 @@ ggplot(approval, aes(x = `Start Date`, y = Approving, group = President, colour 
     geom_line() +
     facet_wrap(~President) + 
     theme_minimal()
-# Need to figure out x-axis nonsense 
+
+ggplot(data = approval, aes(x = `Start Date`, y = `Unsure/NoData`, group = President, color = President)) +
+  geom_line() +
+  theme_minimal()
 ```
+
+## Looking at the data by month 
+```{r monthly view tidying, echo=FALSE}
+approval %>% 
+  mutate(month = month(`Start Date`)) -> approval
+approval %>%
+  group_by(month) %>%
+  mutate(Approving_Month = mean(Approving),
+            Disapproving_Month = mean(Disapproving),
+            `Unsure/NoData_Month` = mean(`Unsure/NoData`)) -> approval
+
+```
+
+```{r monthly view plots}
+ggplot(data = approval, aes(x = `Start Date`, y = Approving_Month, group = President, color = President)) +
+  geom_line() +
+  theme_minimal()
+```
+
+Well, crap. 
+
+Next questions
+
+* What counts as a "major" change? 
+* What periods should we be looking at? How do we construct months? 
+
