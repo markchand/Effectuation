@@ -30,7 +30,9 @@ approval %>%
 ## Data examination 
 
 ### Summary statistics
-Need to figure out how to ignore the changes from one president to another (or do we?). 
+Need to figure out how to ignore the changes from one president to another; also want to see variation within an election cycle (starts in March). 
+
+
 ```{r summary statistics, echo=FALSE}
 approval %>% group_by(President) %>% summarize(mean=mean(Approving), sd=sd(Approving), max=max(Approving), min=min(Approving))
 # approval %>% split(.$President) %>% map(summary)
@@ -92,4 +94,7 @@ Next questions
 
 * What counts as a "major" change? 
 * What periods should we be looking at? How do we construct months? 
-
+* Peter: What is strategy? Marketing; FEC data on expenditures?  
+* Peter: Is there precedent for what counts as a shock? 
+* Peter: Where to pull FEC data from, most effectively? 
+* How to talk about change in donation patterns? 
