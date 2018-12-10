@@ -30,9 +30,10 @@ approval %>%
 ## Data examination 
 
 ### Summary statistics
-Want summary statistics by President, and to figure out how to ignore the changes from one president to another (or do we?). 
+Need to figure out how to ignore the changes from one president to another (or do we?). 
 ```{r summary statistics, echo=FALSE}
-summary(approval)
+approval %>% group_by(President) %>% summarize(mean=mean(Approving), sd=sd(Approving), max=max(Approving), min=min(Approving))
+# approval %>% split(.$President) %>% map(summary)
 ```
 
 ### Histograms of approval and disapproval
