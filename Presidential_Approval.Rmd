@@ -6,19 +6,19 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE, message=FALSE, warning=FALSE)
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE, message=FALSE, warning=FALSE)
+library(readxl)
+library(tidyverse)
+library(lubridate)
 ```
 
 ## What This Is
 This is some initial data exploration on some presidential approval data. 
 
-# Data 
+## Data 
 The data we're using comes from Gallup. That's behind a paywall, so we yanked it from [The American Presidency Project](https://www.presidency.ucsb.edu/statistics/data/presidential-job-approval), which shares the data as a rather unworkable Excel sheet, which we then tidied. 
 
-```{r importing approval, echo=F}
-library(readxl)
-library(tidyverse)
-library(lubridate)
+```{r importing approval}
 approval <- read_excel("data/presidential_approval/American Presidency Project - Approval Ratings for POTUS.xlsx", 
     col_types = c("text", "date", "date", 
         "numeric", "numeric", "numeric"))
@@ -29,11 +29,15 @@ approval %>%
 
 ## Data examination 
 
-### Summary statistics
+### Summary statistics of approval 
 Need to figure out how to ignore the changes from one president to another; also want to see variation within an election cycle (starts in March). 
 
-
 ```{r summary statistics, echo=FALSE}
+# Overall summary statistics
+approval %>% summarize(mean=mean(Approving), sd=sd(Approving), max=max(Approving), min=min(Approving))
+# Why does this give per-month statistics? 
+
+# President-specific summary statistics
 approval %>% group_by(President) %>% summarize(mean=mean(Approving), sd=sd(Approving), max=max(Approving), min=min(Approving))
 # approval %>% split(.$President) %>% map(summary)
 ```
@@ -46,6 +50,27 @@ ggplot(approval, aes(Disapproving)) + geom_histogram() + theme_minimal()
 
 ggplot(approval, aes(`Unsure/NoData`)) + geom_histogram() + theme_minimal()
 
+```
+
+## Summary statistics of change in approval 
+```{r}
+# Overall summary statistics
+approval %>% summarize(mean=mean(Approving_change), sd=sd(Approving_change), max=max(Approving_change), min=min(Approving_change))
+# Why does this give per-month statistics? Let's call it sd=2.5
+
+approval %>% summarize(mean=mean(Disapproving_change), sd=sd(Disapproving_change), max=max(Disapproving_change), min=min(Disapproving_change))
+#Change in admins in Janaury is dragging up the sd here. Let's call this sd=2.75
+
+approval %>% summarize(mean=mean(`Unsure/NoData_change`), sd=sd(`Unsure/NoData_change`), max=max(`Unsure/NoData_change`), min=min(`Unsure/NoData_change`))
+# Interesting, changes less. Call it sd=1.75 
+
+# President-specific summary statistics
+approval %>% group_by(President) %>% summarize(mean=mean(Approving_change,na.rm=T), sd=sd(Approving_change, na.rm=T), max=max(Approving_change, na.rm=T), min=min(Approving_change, na.rm=T))
+# Interesting. Less change in Presidential approval over time. 
+```
+
+## Histograms of change in approval 
+```{r change histograms}
 ggplot(approval, aes(Approving_change)) + geom_histogram() + theme_minimal()
 
 ggplot(approval, aes(Disapproving_change)) + geom_histogram() + theme_minimal()
@@ -53,9 +78,10 @@ ggplot(approval, aes(Disapproving_change)) + geom_histogram() + theme_minimal()
 ggplot(approval, aes(`Unsure/NoData_change`)) + geom_histogram() + theme_minimal()
 ```
 
+
 ## Plots! 
 Need to figure out how to fix x-axis in facet wrap. 
-```{r approval over time, echo=FALSE}
+```{r approval over time}
 ggplot(data = approval, aes(x = `Start Date`, y = Approving, group = President, color = President)) +
   geom_line() +
   theme_minimal()
@@ -70,8 +96,8 @@ ggplot(data = approval, aes(x = `Start Date`, y = `Unsure/NoData`, group = Presi
   theme_minimal()
 ```
 
-## Looking at the data by month 
-```{r monthly view tidying, echo=FALSE}
+## Looking at the data by month (and #failing)
+```{r monthly view tidying}
 approval %>% 
   mutate(month = month(`Start Date`)) -> approval
 approval %>%
@@ -89,6 +115,21 @@ ggplot(data = approval, aes(x = `Start Date`, y = Approving_Month, group = Presi
 ```
 
 Well, crap. 
+
+## Identifying Shocks 
+```{r identifying shocks, echo=F}
+# Overall, identify any jumps or drops in approval over 2.5, and over 5.
+
+approval %>% 
+  mutate(shock1sd = ifelse(abs(Approving_change) > 2.5, 1, 0),
+         shock2sd = ifelse(abs(Approving_change) > 5, 1, 0),
+         shock3sd = ifelse(abs(Approving_change) > 7.5, 1, 0)) -> approval
+
+# I don't know the right way to see how many shocks there are, but summary() tells me there are 3985 data points and that 17.27% involve changes over 2.5 points, 4.367% of them involve shocks over 5 points, and that 1.707% of them involve shocks over 7 points. 
+
+# Then any jumps or drops over the sd(x1) and sd(x2) of that specific president, to account for change over time in stickiness of ratings. 
+# Then do the same for disapproval and unsure/no data. 
+```
 
 Next questions
 
