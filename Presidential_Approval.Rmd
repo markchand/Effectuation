@@ -67,6 +67,18 @@ approval %>% summarize(mean=mean(`Unsure/NoData_change`), sd=sd(`Unsure/NoData_c
 # President-specific summary statistics
 approval %>% group_by(President) %>% summarize(mean=mean(Approving_change,na.rm=T), sd=sd(Approving_change, na.rm=T), max=max(Approving_change, na.rm=T), min=min(Approving_change, na.rm=T))
 # Interesting. Less change in Presidential approval over time. 
+
+# President-specific approval AND change statistics for Chet 
+approval %>% group_by(President) %>% summarize(
+  `# of polls`=n(),
+  mean=mean(Approving), 
+  sd=sd(Approving), 
+  max=max(Approving), 
+  min=min(Approving),
+  `mean(change)`=mean(Approving_change,na.rm=T), 
+  `sd(change)`=sd(Approving_change, na.rm=T), 
+  `max(change)`=max(Approving_change, na.rm=T), 
+  `min(change)`=min(Approving_change, na.rm=T)) -> forChet 
 ```
 
 ## Histograms of change in approval 
