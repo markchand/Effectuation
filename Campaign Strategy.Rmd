@@ -1,0 +1,34 @@
+---
+title: "Campaign Strategy"
+author: "Peter Boumgarden"
+date: "12/13/2018"
+output: html_document
+---
+
+```{r comment=NA, warning=FALSE, message=FALSE} 
+# Installing Necessary Packages
+source("http://washuresearch.org/stockfunctions.R") 
+library(tidyverse) 
+library(data.table)
+tidyverse_update()
+install.packages(c("broom", "cli", "dbplyr", "dplyr", "ggplot2", "haven", "httr", 
+"jsonlite", "purrr", "readr", "reprex", "rlang", "rstudioapi", 
+"tidyr"))
+```
+
+```{r comment=NA, warning=FALSE, message=FALSE} 
+# Setting WD
+
+setwd("~/Dropbox/2-Scholarship/1-Academic/2- Projects/Political Campaign Strategy/data/Campaign_Spend")
+
+# Loading Data
+
+spend2000 <- read.table("webl00.txt", 
+                 header = TRUE)
+2004
+2008
+2012
+2016
+
+```
+
