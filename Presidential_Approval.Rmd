@@ -134,9 +134,6 @@ monthlyapproval %>%
 monthlyapproval %>% 
   mutate(Approving_change = Approving_Month - lead(Approving_Month), Disapproving_change = Disapproving_Month - lead(Disapproving_Month),
          `Unsure/NoData_change` = `Unsure/NoData_Month` - lead(`Unsure/NoData_Month`)) -> monthlyapproval
-
-
-
 ```
 
 ```{r monthly view plot FAIL}
