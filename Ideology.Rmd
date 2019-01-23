@@ -1,0 +1,168 @@
+---
+title: "Ideology"
+author: "Mark Hand"
+date: "1/22/2019"
+output: html_document
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, message=FALSE, warning=FALSE)
+```
+
+```{r packages}
+library(tidyverse) # for data wrangling and plotting 
+library(lubridate) # for dates
+library(ggjoy) # for kicks (almost) 
+```
+
+```{r data}
+# Loading DIME data 
+# Source http://web.stanford.edu/~bonica/data.html
+# Blanked out to enable knitting 
+# PoliticalIdeology <- read_csv("data/dime_cong_elections_current.csv")
+PoliticalIdeology %>% transform(total_receipts = as.numeric(total_receipts)) -> PoliticalIdeology
+PoliticalIdeology %>% filter(cycle==2014) -> PoliticalIdeology2014
+
+# A histogram of Political Ideology in 2014, for both house and senate candidates 
+ggplot(subset(PoliticalIdeology2014, seat = federal:house)) +
+  geom_histogram(aes(recipient_cfscore)) +
+  theme_minimal()
+
+ggplot(subset(PoliticalIdeology2014, seat = federal:senate)) +
+  geom_histogram(aes(recipient_cfscore)) +
+  theme_minimal()
+
+# Examining 2014 Contribution data
+# bigfile.sample <- read.csv("Political_Data/contribDB_2014.csv", # stringsAsFactors=FALSE, header=T, nrows=20)
+
+# Loading 2014 Contribution data 
+# Commented out to allow knitting 
+# contribDB_2014 <- fread("data/contribDB_2014.csv", select =  c("bonica.rid","transaction.id", "amount","date","contributor.name","contributor.zipcode","recipient.name","seat","contributor.cfscore", "candidate.cfscore", "contributor.state", "recipient.state"))
+# head(contribDB_2014)
+
+# Creating Time Variables in Contributions 
+contribDB_2014 %>% 
+  mutate(date = as.Date(date),
+    month = month(date),
+    week = week(date),
+    year = year(date)) -> contribDB_2014
+
+## Sample Candidate Filters
+# table(PoliticalIdeology2014$recipient.name)
+# Candidate.Funding_Alquist <- filter(contribDB_2014, recipient.name == "alquist, elaine")
+# Candidate.Funding_Beto <- filter(contribDB_2014, recipient.name == "O ROURKE, ROBERT (BETO)")
+
+## Looking at data 
+# table(contribDB_2014$recipient.state)
+# ... strange results. What are these numbers? 
+# table(contribDB_2014$contributor.state)
+# ... shows lots of types of TX.
+# contribDB_2014 %>%
+#   mutate(contributor.state = str_replace(contributor.state, c("tx","Tx"), "TX")) -> contribDB_2014_test
+# table(contribDB_2014_test$contributor.state)
+# Didn't work. What the devil?
+# str(contribDB_2014_test)
+# contribDB_2014 %>% mutate(contributor.state = recode(contributor.state, "Tx"= "TX",  "tx"="TX")) -> contribDB_2014_test
+# table(contribDB_2014_test$contributor.state)
+# Worked. So... 
+# rm(contribDB_2014_test)
+
+# Tidying TX labels 
+contribDB_2014 %>% mutate(contributor.state = recode(contributor.state, "Tx"= "TX",  "tx"="TX")) -> contribDB_2014
+
+#Create TX contributors database 
+contribDB_2014_TX <- filter(contribDB_2014, recipient.state == "TX" | contributor.state == "TX")
+# ... where "|" means "or"
+
+# Create Beto database 
+contribDB_2014_Beto <- filter(contribDB_2014, recipient.name == "O ROURKE, ROBERT (BETO)")
+
+# Create TX weekly mean and SD   
+contribDB_2014_TX %>% 
+  group_by(bonica.rid, recipient.name,seat,candidate.cfscore, year, month, week) %>% 
+  summarise(
+    contributor.mean.week = mean(contributor.cfscore, na.rm=TRUE),
+    contributor.sd.week = sd(contributor.cfscore, na.rm=TRUE)
+    ) -> TX2014_weekly
+
+# Create TX monthly mean and SD   
+contribDB_2014_TX %>% 
+  group_by(bonica.rid, recipient.name,seat,candidate.cfscore, year, month) %>% 
+  summarise(
+    contributor.mean.month = mean(contributor.cfscore, na.rm=TRUE),
+    contributor.sd.month = sd(contributor.cfscore, na.rm=TRUE)
+    ) -> TX2014_monthly
+```
+
+```{r Beto plots}
+# Beto2014 
+ggplot(contribDB_2014_Beto) + 
+  geom_point(mapping = aes(x = date, y = contributor.cfscore
+  # ,size = amount
+  )) + theme_minimal() + labs(list(title='', x='time', y='contributor.cfscore'))
+
+# Beto 2014 by week?  
+ggplot(contribDB_2014_Beto) + 
+  geom_point(aes(x = week, y = contributor.cfscore
+  # ,size = amount
+  )) + theme_minimal() + labs(list(title='', x='time', y='contributor.cfscore'))
+
+# Beto 2014 boxplot by month
+ggplot(contribDB_2014_Beto) + 
+  geom_boxplot(aes(x = month, y = contributor.cfscore, group = month)) + 
+  theme_minimal() + labs(list(title='', x='time', y='contributor.cfscore'))
+
+# Beto 2014 boxplot by week 
+ggplot(contribDB_2014_Beto) + 
+  geom_boxplot(aes(x = week, y = contributor.cfscore, group = week)) + 
+  theme_minimal() + labs(list(title='', x='time', y='contributor.cfscore'))
+
+# Beto violin by month 
+ggplot(contribDB_2014_Beto) + 
+  geom_violin(aes(x = month, y = contributor.cfscore, group = month)) + 
+  theme_minimal() + labs(list(title='', x='time', y='contributor.cfscore'))
+
+# Beto violin by week 
+ggplot(contribDB_2014_Beto) + 
+  geom_violin(aes(x = week, y = contributor.cfscore, group = week)) + 
+  theme_minimal() + labs(list(title='', x='time', y='contributor.cfscore'))
+
+# Beto2014 trend line
+ggplot(contribDB_2014_Beto) + geom_point(mapping = aes(x = date, y = contributor.cfscore)) + geom_smooth(mapping = aes(x = date, y = contributor.cfscore), method="lm") + theme_minimal()
+
+# Betojoy fail 
+# https://simplystatistics.org/2017/07/13/the-joy-of-no-more-violin-plots/
+# ggplot(contribDB_2014_Beto, aes(x = contributor.cfscore, y = month, group = month)) + geom_joy()
+```
+
+```{r examining means and sds of TX contributors ideology}
+# Looks like I need to filter for federal House and Senate--I had no idea the others were in here! 
+TX2014_weekly %>%  filter(seat == "federal:house" | seat == "federal:senate") -> TX2014_weekly
+
+TX2014_monthly %>%  filter(seat == "federal:house" | seat == "federal:senate") -> TX2014_monthly
+
+# A histogram of donor ideologies (mean by month)
+ggplot(TX2014_monthly) +
+  geom_histogram(aes(contributor.mean.month)) +
+  theme_minimal()
+
+# A histogram of donor ideologies (sd by month)
+ggplot(TX2014_monthly) +
+  geom_histogram(aes(contributor.sd.month)) +
+  theme_minimal()
+
+# A histogram of donor ideologies (mean by week)
+ggplot(TX2014_weekly) +
+  geom_histogram(aes(contributor.mean.week)) +
+  theme_minimal()
+
+# A histogram of donor ideologies (sd by week)
+ggplot(TX2014_weekly) +
+  geom_histogram(aes(contributor.sd.week)) +
+  theme_minimal()
+
+
+```
+
+Ok, so what I think I've done here: I've shown that I can summarize mean and standard deviation of donor ideologies for one candidate, and then for all candidates (in Texas). If that's right, then we should be able to look at what the ideology of early donors (in mean and in standard deviation) is predictive of. 
