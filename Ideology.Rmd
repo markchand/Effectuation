@@ -123,6 +123,12 @@ ggplot(contribDB_2014_Beto) +
   geom_violin(aes(x = month, y = contributor.cfscore, group = month)) + 
   theme_minimal() + labs(list(title='', x='time', y='contributor.cfscore'))
 
+# Beto violin by month, weighted by amount 
+ggplot(contribDB_2014_Beto) + 
+  geom_violin(aes(x = month, y = contributor.cfscore*amount, group = month)) + 
+  theme_minimal() + labs(list(title='', x='time', y='contributor.cfscore'))
+
+
 # Beto violin by week 
 ggplot(contribDB_2014_Beto) + 
   geom_violin(aes(x = week, y = contributor.cfscore, group = week)) + 
@@ -166,3 +172,8 @@ ggplot(TX2014_weekly) +
 ```
 
 Ok, so what I think I've done here: I've shown that I can summarize mean and standard deviation of donor ideologies for one candidate, and then for all candidates (in Texas). If that's right, then we should be able to look at what the ideology of early donors (in mean and in standard deviation) is predictive of. 
+
+Asks Peter: "Can you check a simple correlation run a regression without controls on candidate variance and DV of outcome?"
+
+Quick answer: Not with this data, but could perhaps do so with Congressional candidates from multiple years, or maybe state level candidates over multiple years. 
+
