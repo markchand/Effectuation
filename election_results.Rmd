@@ -49,6 +49,3 @@ stargazer(testlm, type="text")
 
 These explain 75% of variation in Democratic vote share. 
 
-
-
-
