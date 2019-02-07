@@ -1,0 +1,6 @@
+Documentation for JOPrepfile1 (aggregate data).doc (application/msword) 52736 bytes.
+Documentation for JOPrepfile2 (ANES cumulative data file).doc (application/msword) 49152 bytes.
+Documentation for JOPrepfile3 (2012 ANES).doc (application/msword) 45568 bytes.
+JOPrepfile1.dta (application/x-stata) 1594361 bytes.
+JOPrepfile2.dta (application/x-stata) 7631620 bytes.
+JOPrepfile3.dta (application/x-stata) 479201 bytes.
