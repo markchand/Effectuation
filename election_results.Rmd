@@ -1,0 +1,51 @@
+---
+title: "election_results"
+author: "Mark Hand"
+date: "2/7/2019"
+output: html_document
+---
+
+Examining data about the outcomes of elections. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, message=FALSE, warning=FALSE)
+# rm(list=ls())
+```
+
+```{r packages, echo = F}
+library(tidyverse) # for data wrangling and plotting 
+library(lubridate) # for dates
+library(haven) # for .dta files 
+library(stargazer) # for outputs 
+```
+
+```{r data, echo = F}
+# Source https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/29559
+JOPrepfile1 <- read_dta("data/incumbency_advantage/JOPrepfile1.dta")
+JOPrepfile2 <- read_dta("data/incumbency_advantage/JOPrepfile2.dta")
+JOPrepfile3 <- read_dta("data/incumbency_advantage/JOPrepfile3.dta")
+```
+
+### Author's regressions (Stata)
+
+A.  Gelman-King incumbency advantage:
+
+```. sort year```
+```. by year:  reg dv dvp ptynow inc3 if redist==0&year!=1972& year!=1982& year!1992&year!=2002&year!=2012```
+
+(*Coefficient on “inc3” is the incumbency advantage*)
+
+B.  Modified Gelman-King incumbency advantage:
+
+```. sort year```
+```. by year:  reg dv dpres ptynow inc3```
+
+### Initial regressions
+
+```{r incumbency advantage, echo=F}
+testlm <- lm(dv~dpres+ptynow+inc3, JOPrepfile1)
+stargazer(testlm, type="text")
+```
+
+These explain 75% of variation in Democratic vote share. 
+
